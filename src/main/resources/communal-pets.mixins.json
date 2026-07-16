@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "com.github.lunaunde.communalpets.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ExampleMixin",
+		"minecraft.word.entity.TamableAnimalMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
