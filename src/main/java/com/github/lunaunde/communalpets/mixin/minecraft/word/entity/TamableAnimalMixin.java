@@ -1,11 +1,16 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity;
 
 import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -18,6 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
+
+import static com.github.lunaunde.communalpets.CommunalPets.MOD_ID;
 
 @Mixin(TamableAnimal.class)
 public abstract class TamableAnimalMixin extends Animal implements CommunalPetBehavior {
@@ -35,10 +42,10 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
     private Vec3 wanderCenter;
 
     @Unique
-    private double wanderRadius;
+    private double wanderRadius = 16;
 
     @Unique
-    private double wanderInnerRange;
+    private double wanderInnerRange = 0.8;
 
     protected TamableAnimalMixin(final EntityType<? extends Animal> type, final Level level) {
         super(type, level);
@@ -105,7 +112,63 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
         }
     }
 
-    @Inject(method = "addAdditionalSaveData", at = @At("HEAD"))
+    @Override
+    @Unique
+    public void communalPets$cycleBehavior(Player player) {
+        communalPets$cycleBehavior();
+        // mobInteract 在客户端和服务端都会执行，只在服务端发包
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        String displayerName = this.getName().getString();
+        ServerLevel level = (ServerLevel) this.level();
+        switch (behaviorState) {
+            case BEHAVIOR_FOLLOW:
+                level.sendParticles(
+                        ParticleTypes.WAX_ON,
+                        this.getX(),
+                        this.getEyeY(),
+                        this.getZ(),
+                        15,
+                        0.3,0.2,0.3,
+                        0.1
+                );
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                   Component.literal(displayerName + "跟随中")
+                ));
+                break;
+            case BEHAVIOR_WANDER:
+                level.sendParticles(
+                        ParticleTypes.WAX_OFF,
+                        this.getX(),
+                        this.getEyeY(),
+                        this.getZ(),
+                        15,
+                        0.3,0.2,0.3,
+                        0.1
+                );
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.literal(displayerName + "游荡中")
+                ));
+                break;
+            case BEHAVIOR_SIT:
+                level.sendParticles(
+                        ParticleTypes.SCRAPE,
+                        this.getX(),
+                        this.getEyeY(),
+                        this.getZ(),
+                        15,
+                        0.3,0.2,0.3,
+                        0.1
+                );
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.literal(displayerName + "坐下")
+                ));
+                break;
+        }
+    }
+
+    @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     private void onAddAdditionalSaveData(final ValueOutput output, CallbackInfo ci) {
         if(this.isTame()) {
             String behavior = switch (behaviorState) {
@@ -121,10 +184,10 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
         }
     }
 
-    @Inject(method = "readAdditionalSaveData", at = @At("HEAD"))
+    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     private void onReadAdditionalSaveData(final ValueInput input, CallbackInfo ci) {
         if(this.isTame()) {
-            String behavior = String.valueOf(input.getString("behavior"));
+            String behavior = input.getStringOr("behavior", "sit");
             switch (behavior) {
                 case "follow":
                     this.communalPets$setBehaviorState(BEHAVIOR_FOLLOW);
@@ -136,7 +199,7 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
                     this.communalPets$setBehaviorState(BEHAVIOR_SIT);
                     break;
                 default:
-                    this.communalPets$setBehaviorState(BEHAVIOR_FOLLOW);
+                    this.communalPets$setBehaviorState(BEHAVIOR_SIT);
             }
             Optional<Vec3> wanderCenter = input.read("wander_center", Vec3.CODEC);
             this.wanderCenter = wanderCenter.orElse(this.position());

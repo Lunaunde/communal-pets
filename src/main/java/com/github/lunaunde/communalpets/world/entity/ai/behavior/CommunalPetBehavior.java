@@ -1,6 +1,7 @@
 package com.github.lunaunde.communalpets.world.entity.ai.behavior;
 
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -25,6 +26,7 @@ public interface CommunalPetBehavior {
     void communalPets$setBehaviorState(int state);
 
     void communalPets$cycleBehavior();
+    void communalPets$cycleBehavior(Player player);
 
     /**
      * Safe accessor — casts through Object because the interface is injected at
@@ -41,4 +43,5 @@ public interface CommunalPetBehavior {
     static void cycleBehavior(TamableAnimal animal) {
         ((CommunalPetBehavior) animal).communalPets$cycleBehavior();
     }
+    static void cycleBehavior(TamableAnimal animal, Player player) {((CommunalPetBehavior) animal).communalPets$cycleBehavior(player);}
 }

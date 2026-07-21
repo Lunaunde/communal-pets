@@ -4,7 +4,13 @@
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"ExampleMixin",
-		"minecraft.word.entity.TamableAnimalMixin"
+		"minecraft.word.entity.TamableAnimalMixin",
+		"minecraft.word.entity.animal.wolf.WolfMixin",
+		"minecraft.word.entity.animal.feline.CatMixin",
+		"minecraft.word.entity.animal.parrot.ParrotMixin",
+		"minecraft.word.entity.ai.goal.SitWhenOrderedToGoalMixin",
+		"minecraft.word.entity.ai.goal.FollowOwnerGoalMixin",
+		"minecraft.word.entity.ai.goal.LandOnOwnerShoulderGoalMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
