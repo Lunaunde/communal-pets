@@ -1,6 +1,6 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.animal.feline;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import com.github.lunaunde.communalpets.world.entity.ai.goal.WaterAvoidingRetreatToInnerRangeGoal;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -21,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class CatMixin extends TamableAnimal {
     @Unique
     private Player lastInteractor;
+    @Unique
+    private InteractionHand lastInteractorHand;
 
     protected CatMixin(EntityType<? extends Cat> entityType, Level level) {super(entityType,level);}
 
@@ -49,6 +51,7 @@ public abstract class CatMixin extends TamableAnimal {
             )
     )
     private void redirectSetOrderedToSitToCycleBehavior(Cat instance, boolean orderedToSit) {
-        CommunalPetBehavior.cycleBehavior(instance,this.lastInteractor);
+        if(lastInteractorHand == InteractionHand.MAIN_HAND)
+            CommunalPet.cycleBehavior(instance,this.lastInteractor);
     }
 }

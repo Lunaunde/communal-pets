@@ -1,6 +1,6 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.ai.goal;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LandOnOwnersShoulderGoal;
 import net.minecraft.world.entity.animal.parrot.ShoulderRidingEntity;
@@ -20,7 +20,7 @@ public abstract class LandOnOwnerShoulderGoalMixin extends Goal {
     @Inject(method = "canUse",at = @At("HEAD"),cancellable = true)
     private void onCanUse(CallbackInfoReturnable<Boolean> cir)
     {
-        if(CommunalPetBehavior.getBehaviorState(this.entity)!=CommunalPetBehavior.BEHAVIOR_FOLLOW) {
+        if(CommunalPet.getBehaviorState(this.entity)!= CommunalPet.BEHAVIOR_FOLLOW) {
             cir.setReturnValue(false);
         }
     }

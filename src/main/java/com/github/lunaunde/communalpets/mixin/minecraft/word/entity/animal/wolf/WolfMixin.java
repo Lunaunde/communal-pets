@@ -1,8 +1,7 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.animal.wolf;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import com.github.lunaunde.communalpets.world.entity.ai.goal.WaterAvoidingRetreatToInnerRangeGoal;
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class WolfMixin extends TamableAnimal{
     @Unique
     private Player lastInteractor;
+    @Unique
+    private InteractionHand lastInteractorHand;
 
     @Unique
     private boolean wolfTameBugFixerFlag = false;
@@ -55,11 +56,12 @@ public abstract class WolfMixin extends TamableAnimal{
             )
     )
     private void redirectSetOrderedToSitToCycleBehavior(Wolf instance, boolean orderedToSit) {
-        if(wolfTameBugFixerFlag) {
-            CommunalPetBehavior.cycleBehavior(instance, this.lastInteractor);
-        }
-        else{
-            wolfTameBugFixerFlag = true;
+        if(lastInteractorHand == InteractionHand.MAIN_HAND) {
+            if (wolfTameBugFixerFlag) {
+                CommunalPet.cycleBehavior(instance, this.lastInteractor);
+            } else {
+                wolfTameBugFixerFlag = true;
+            }
         }
     }
 }

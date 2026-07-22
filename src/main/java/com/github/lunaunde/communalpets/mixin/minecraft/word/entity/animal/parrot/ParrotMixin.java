@@ -1,8 +1,8 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.animal.parrot;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.CommunalPets;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import com.github.lunaunde.communalpets.world.entity.ai.goal.WaterAvoidingRetreatToInnerRangeFlyingGoal;
-import com.github.lunaunde.communalpets.world.entity.ai.goal.WaterAvoidingRetreatToInnerRangeGoal;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +22,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ParrotMixin extends ShoulderRidingEntity {
     @Unique
     private Player lastInteractor;
+    @Unique
+    private InteractionHand lastInteractorHand;
 
     protected ParrotMixin(final EntityType<? extends ShoulderRidingEntity> type, final Level level) {
         super(type, level);
@@ -41,7 +43,9 @@ public abstract class ParrotMixin extends ShoulderRidingEntity {
 
     @Inject(method = "mobInteract", at = @At("HEAD"))
     private void capturePlayer(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
+        CommunalPets.LOGGER.info("hand: {}", hand);
         this.lastInteractor = player;
+        this.lastInteractorHand = hand;
     }
     @Redirect(
             method = "mobInteract",
@@ -52,6 +56,7 @@ public abstract class ParrotMixin extends ShoulderRidingEntity {
             )
     )
     private void redirectSetOrderedToSitToCycleBehavior(Parrot instance, boolean orderedToSit) {
-        CommunalPetBehavior.cycleBehavior(instance,this.lastInteractor);
+        if(lastInteractorHand == InteractionHand.MAIN_HAND)
+            CommunalPet.cycleBehavior(instance,this.lastInteractor);
     }
 }

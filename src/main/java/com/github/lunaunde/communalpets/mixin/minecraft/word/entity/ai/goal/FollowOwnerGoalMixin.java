@@ -1,6 +1,6 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.ai.goal;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -20,7 +20,7 @@ public abstract class FollowOwnerGoalMixin extends Goal {
     @Inject(method="canUse",at = @At("HEAD"), cancellable = true)
     private void onCanUse(final CallbackInfoReturnable<Boolean> cir)
     {
-        if(CommunalPetBehavior.getBehaviorState(this.tamable)!=CommunalPetBehavior.BEHAVIOR_FOLLOW) {
+        if(CommunalPet.getBehaviorState(this.tamable)!= CommunalPet.BEHAVIOR_FOLLOW) {
             cir.setReturnValue(false);
         }
     }

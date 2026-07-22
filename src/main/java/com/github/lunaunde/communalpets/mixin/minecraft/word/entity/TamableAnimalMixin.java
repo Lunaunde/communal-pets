@@ -1,11 +1,14 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.CommunalPets;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
@@ -22,12 +25,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Optional;
-
-import static com.github.lunaunde.communalpets.CommunalPets.MOD_ID;
+import java.util.*;
 
 @Mixin(TamableAnimal.class)
-public abstract class TamableAnimalMixin extends Animal implements CommunalPetBehavior {
+public abstract class TamableAnimalMixin extends Animal implements CommunalPet, OwnableEntity {
 
     @Shadow
     private boolean orderedToSit;
@@ -46,6 +47,9 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
 
     @Unique
     private double wanderInnerRange = 0.8;
+
+    @Unique
+    private final List<Caregiver> caregivers = new ArrayList<>();
 
     protected TamableAnimalMixin(final EntityType<? extends Animal> type, final Level level) {
         super(type, level);
@@ -130,11 +134,11 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
                         this.getEyeY(),
                         this.getZ(),
                         15,
-                        0.3,0.2,0.3,
+                        0.3, 0.2, 0.3,
                         0.1
                 );
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                   Component.literal(displayerName + "跟随中")
+                        Component.literal(displayerName + "跟随中")
                 ));
                 break;
             case BEHAVIOR_WANDER:
@@ -144,7 +148,7 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
                         this.getEyeY(),
                         this.getZ(),
                         15,
-                        0.3,0.2,0.3,
+                        0.3, 0.2, 0.3,
                         0.1
                 );
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
@@ -158,7 +162,7 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
                         this.getEyeY(),
                         this.getZ(),
                         15,
-                        0.3,0.2,0.3,
+                        0.3, 0.2, 0.3,
                         0.1
                 );
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
@@ -168,9 +172,20 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
         }
     }
 
+    @Override
+    @Unique
+    public List<Caregiver> communalPets$getCaregivers() {
+        return caregivers;
+    }
+
+    @Unique
+    private void setOwnerAsCaregiver() {
+        caregivers.add(new Caregiver(Objects.requireNonNull(this.getOwnerReference()).getUUID(), "Owner"));
+    }
+
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     private void onAddAdditionalSaveData(final ValueOutput output, CallbackInfo ci) {
-        if(this.isTame()) {
+        if (this.isTame()) {
             String behavior = switch (behaviorState) {
                 case BEHAVIOR_FOLLOW -> "follow";
                 case BEHAVIOR_WANDER -> "wander";
@@ -181,12 +196,19 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
             output.store("wander_center", Vec3.CODEC, communalPets$getWanderCenter());
             output.putDouble("wander_radius", wanderRadius);
             output.putDouble("wander_inner_range", wanderInnerRange);
+
+            ValueOutput.ValueOutputList caregiversData = output.childrenList("caregivers");
+            for (Caregiver caregiver : caregivers) {
+                ValueOutput entry = caregiversData.addChild();
+                entry.putString("uuid", caregiver.getUUID().toString());
+                entry.putString("type", caregiver.getType());
+            }
         }
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     private void onReadAdditionalSaveData(final ValueInput input, CallbackInfo ci) {
-        if(this.isTame()) {
+        if (this.isTame()) {
             String behavior = input.getStringOr("behavior", "sit");
             switch (behavior) {
                 case "follow":
@@ -205,6 +227,25 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
             this.wanderCenter = wanderCenter.orElse(this.position());
             this.wanderRadius = input.getDoubleOr("wander_radius", 32);
             this.wanderInnerRange = input.getDoubleOr("wander_inner_range", 0.8);
+
+            this.caregivers.clear();
+            input.childrenList("caregivers").ifPresent(list -> {
+                for (ValueInput entry : list) {
+                    UUID uuid = UUID.fromString(entry.getStringOr("uuid", ""));
+                    String type = entry.getStringOr("type", "undefined");
+                    if(type.equals("Owner")) {
+                        if(!uuid.equals(Objects.requireNonNull(this.getOwnerReference()).getUUID())){
+                            CommunalPets.LOGGER.warn("Owner Caregiver UUID({}) mismatch to Owner UUID({})", uuid, this.getOwnerReference().getUUID());
+                        }
+                        setOwnerAsCaregiver();
+                    }else if(type.equals("Caregiver")) {
+                        caregivers.add(new Caregiver(uuid, type));
+                    }else{
+                        CommunalPets.LOGGER.warn("Caregiver {} Type unknown", uuid);
+                    }
+                }
+            });
+
         }
     }
 
@@ -215,5 +256,27 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPetBe
         } else {
             this.communalPets$setBehaviorState(BEHAVIOR_FOLLOW);
         }
+    }
+
+    @Inject(method = "tame", at = @At("TAIL"))
+    private void onTame(final Player player, CallbackInfo ci) {
+        setOwnerAsCaregiver();
+        CommunalPets.LOGGER.info("Owner id:{}", String.valueOf(player.getId()));
+    }
+
+    @Inject(method = "isOwnedBy", at = @At("HEAD"), cancellable = true)
+    private void onIsOwnedBy(LivingEntity entity, CallbackInfoReturnable<Boolean> cir) {
+        if (!(entity instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        CommunalPets.LOGGER.info("entity id:{}", String.valueOf(entity.getId()));
+        for (Caregiver caregiver : caregivers) {
+            CommunalPets.LOGGER.info("caregiver id:{}", String.valueOf(caregiver.getUUID()));
+            if (caregiver.getUUID().equals(entity.getUUID())) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+        cir.setReturnValue(false);
     }
 }

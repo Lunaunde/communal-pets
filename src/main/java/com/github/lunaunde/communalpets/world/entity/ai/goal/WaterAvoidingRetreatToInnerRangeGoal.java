@@ -1,14 +1,11 @@
 package com.github.lunaunde.communalpets.world.entity.ai.goal;
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
-import net.minecraft.world.entity.ai.util.AirAndWaterRandomPos;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-
-import static com.github.lunaunde.communalpets.CommunalPets.MOD_ID;
 
 public class WaterAvoidingRetreatToInnerRangeGoal extends RandomStrollGoal {
 
@@ -28,10 +25,10 @@ public class WaterAvoidingRetreatToInnerRangeGoal extends RandomStrollGoal {
 
     @Override
     public boolean canUse() {
-        Vec3 center = ((CommunalPetBehavior)this.tamableAnimal).communalPets$getWanderCenter();
-        double radius = ((CommunalPetBehavior)this.tamableAnimal).communalPets$getWanderRadius();
-        double innerRange = ((CommunalPetBehavior)this.tamableAnimal).communalPets$getWanderInnerRange();
-        if (CommunalPetBehavior.getBehaviorState(tamableAnimal) != CommunalPetBehavior.BEHAVIOR_WANDER) {
+        Vec3 center = ((CommunalPet)this.tamableAnimal).communalPets$getWanderCenter();
+        double radius = ((CommunalPet)this.tamableAnimal).communalPets$getWanderRadius();
+        double innerRange = ((CommunalPet)this.tamableAnimal).communalPets$getWanderInnerRange();
+        if (CommunalPet.getBehaviorState(tamableAnimal) != CommunalPet.BEHAVIOR_WANDER) {
             return false;
         }
         double radiusSqr = radius * radius;
@@ -54,7 +51,7 @@ public class WaterAvoidingRetreatToInnerRangeGoal extends RandomStrollGoal {
 
     @Override
     protected @Nullable Vec3 getPosition() {
-        Vec3 center = ((CommunalPetBehavior)this.tamableAnimal).communalPets$getWanderCenter();
+        Vec3 center = ((CommunalPet)this.tamableAnimal).communalPets$getWanderCenter();
         if (this.mob.isInWater()) {
             Vec3 pos = LandRandomPos.getPosTowards(mob, 15, 7, center);
             return pos == null ? super.getPosition() : center;

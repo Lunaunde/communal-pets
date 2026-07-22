@@ -1,7 +1,7 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.ai.goal;
 
 
-import com.github.lunaunde.communalpets.world.entity.ai.behavior.CommunalPetBehavior;
+import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -33,7 +33,7 @@ public abstract class SitWhenOrderedToGoalMixin extends Goal {
         } else if (!this.mob.onGround()) {
             cir.setReturnValue(false);
             return;
-        } else if(CommunalPetBehavior.getBehaviorState(this.mob)==CommunalPetBehavior.BEHAVIOR_WANDER){
+        } else if(CommunalPet.getBehaviorState(this.mob)== CommunalPet.BEHAVIOR_WANDER){
             cir.setReturnValue(false);
             return;
         }
