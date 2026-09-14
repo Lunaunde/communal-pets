@@ -24,9 +24,6 @@ public abstract class WolfMixin extends TamableAnimal{
     @Unique
     private InteractionHand lastInteractorHand;
 
-    @Unique
-    private boolean wolfTameBugFixerFlag = false;
-
     protected WolfMixin(final EntityType<? extends TamableAnimal> type, final Level level) {
         super(type, level);
     }
@@ -46,6 +43,7 @@ public abstract class WolfMixin extends TamableAnimal{
     @Inject(method = "mobInteract", at = @At("HEAD"))
     private void capturePlayer(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
         this.lastInteractor = player;
+        this.lastInteractorHand = hand;
     }
     @Redirect(
             method = "mobInteract",
@@ -57,11 +55,7 @@ public abstract class WolfMixin extends TamableAnimal{
     )
     private void redirectSetOrderedToSitToCycleBehavior(Wolf instance, boolean orderedToSit) {
         if(lastInteractorHand == InteractionHand.MAIN_HAND) {
-            if (wolfTameBugFixerFlag) {
-                CommunalPet.cycleBehavior(instance, this.lastInteractor);
-            } else {
-                wolfTameBugFixerFlag = true;
-            }
+            CommunalPet.cycleBehavior(instance, this.lastInteractor);
         }
     }
 }

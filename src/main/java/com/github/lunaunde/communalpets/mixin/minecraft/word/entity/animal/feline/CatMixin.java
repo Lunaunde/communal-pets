@@ -41,6 +41,7 @@ public abstract class CatMixin extends TamableAnimal {
     @Inject(method = "mobInteract", at = @At("HEAD"))
     private void capturePlayer(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
         this.lastInteractor = player;
+        this.lastInteractorHand = hand;
     }
     @Redirect(
             method = "mobInteract",

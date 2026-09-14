@@ -266,12 +266,7 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
 
     @Inject(method = "isOwnedBy", at = @At("HEAD"), cancellable = true)
     private void onIsOwnedBy(LivingEntity entity, CallbackInfoReturnable<Boolean> cir) {
-        if (!(entity instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
-        CommunalPets.LOGGER.info("entity id:{}", String.valueOf(entity.getId()));
         for (Caregiver caregiver : caregivers) {
-            CommunalPets.LOGGER.info("caregiver id:{}", String.valueOf(caregiver.getUUID()));
             if (caregiver.getUUID().equals(entity.getUUID())) {
                 cir.setReturnValue(true);
                 return;
