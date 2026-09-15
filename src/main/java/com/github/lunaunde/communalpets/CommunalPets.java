@@ -1,6 +1,9 @@
 package com.github.lunaunde.communalpets;
 
+import com.github.lunaunde.communalpets.world.entity.animal.PetGlow;
+
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import net.minecraft.resources.Identifier;
 
@@ -22,6 +25,11 @@ public class CommunalPets implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Loading Communal Pets");
+
+		// "只有 owner 群看得见发光" 的纯服务端实现：
+		// END_LEVEL_TICK 注入在 ServerLevel.tick() 的 TAIL 上（entityManagement 之后），
+		// 所以每 tick 在这里补发一次发光位，就能保证它是本 tick 最后一个写这个字节的人。
+		ServerTickEvents.END_LEVEL_TICK.register(PetGlow::pushGlowFlags);
 	}
 
 	public static Identifier id(String path) {

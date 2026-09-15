@@ -43,7 +43,6 @@ public abstract class ParrotMixin extends ShoulderRidingEntity {
 
     @Inject(method = "mobInteract", at = @At("HEAD"))
     private void capturePlayer(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
-        CommunalPets.LOGGER.info("hand: {}", hand);
         this.lastInteractor = player;
         this.lastInteractorHand = hand;
     }
