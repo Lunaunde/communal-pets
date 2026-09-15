@@ -1,0 +1,30 @@
+{
+  "communal-pets.behavior.follow_commander": "Following commander",
+  "communal-pets.behavior.follow_nearest": "Following nearest caregiver",
+  "communal-pets.behavior.wander": "Wandering",
+  "communal-pets.behavior.sit": "Sitting",
+
+  "communal-pets.actionbar.behavior": "%s: %s",
+
+  "communal-pets.command.coordinates": "%s, %s, %s",
+
+  "communal-pets.command.error.not_pet": "Target must be a tamed pet",
+  "communal-pets.command.error.not_allowed": "You are not allowed to manage this pet",
+  "communal-pets.command.error.is_owner": "That player is already the owner of this pet",
+  "communal-pets.command.error.already_caregiver": "That player is already a caregiver of this pet",
+  "communal-pets.command.error.not_caregiver": "That player is not a caregiver of this pet",
+  "communal-pets.command.error.unknown_behavior": "Unknown state, expected follow_commander / follow_nearest / wander / sit",
+
+  "communal-pets.command.caregiver.added": "%s is now a caregiver of %s",
+  "communal-pets.command.caregiver.removed": "%s is no longer a caregiver of %s",
+  "communal-pets.command.caregiver.list.header": "Caregivers of %s:",
+  "communal-pets.command.caregiver.list.empty": " (none)",
+  "communal-pets.command.caregiver.tag.owner": "[owner]",
+  "communal-pets.command.caregiver.tag.caregiver": "[caregiver]",
+
+  "communal-pets.command.behavior.get": "Current state of %s: %s",
+  "communal-pets.command.behavior.set": "Set state of %s to %s",
+
+  "communal-pets.command.wander_center.get": "Wander center of %s: %s",
+  "communal-pets.command.wander_center.set": "Set wander center of %s to %s"
+}

@@ -3,7 +3,6 @@
 	"package": "com.github.lunaunde.communalpets.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin",
 		"minecraft.word.entity.MobMixin",
 		"minecraft.word.entity.TamableAnimalMixin",
 		"minecraft.word.entity.animal.wolf.WolfMixin",
@@ -11,7 +10,9 @@
 		"minecraft.word.entity.animal.parrot.ParrotMixin",
 		"minecraft.word.entity.ai.goal.SitWhenOrderedToGoalMixin",
 		"minecraft.word.entity.ai.goal.FollowOwnerGoalMixin",
-		"minecraft.word.entity.ai.goal.LandOnOwnerShoulderGoalMixin"
+		"minecraft.word.entity.ai.goal.LandOnOwnerShoulderGoalMixin",
+		"minecraft.word.entity.ai.goal.OwnerHurtTargetGoalMixin",
+		"minecraft.word.entity.ai.goal.OwnerHurtByTargetGoalMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

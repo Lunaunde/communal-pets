@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 发光是有时限的（60 tick），需要一个每 tick 都会走到的入口。
+ * 发光是有时限的（{@code CommunalPet.GLOW_DURATION_TICKS}，30 tick），需要一个每 tick 都会走到的入口。
  * <p>
  * {@link net.minecraft.world.entity.TamableAnimal} 自己并没有声明 {@code tick()}，
  * 它是继承自 {@link Mob} 的；在 TamableAnimalMixin 里注入 {@code tick} 会把代码

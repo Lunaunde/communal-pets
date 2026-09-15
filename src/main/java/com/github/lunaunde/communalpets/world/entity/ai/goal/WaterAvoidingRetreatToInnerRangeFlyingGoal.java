@@ -26,9 +26,9 @@ public class WaterAvoidingRetreatToInnerRangeFlyingGoal extends WaterAvoidingRan
             return false;
         }
         double radiusSqr = radius * radius;
-        if ((center.distanceToSqr(mob.position()) <= radiusSqr)) {
+        if (this.mob.distanceToSqr(center) <= radiusSqr) {
             if (tryRetreat) {
-                if (mob.distanceToSqr(center) <= radiusSqr * innerRange * innerRange) {
+                if (this.mob.distanceToSqr(center) <= radiusSqr * innerRange * innerRange) {
                     tryRetreat = false;
                     return false;
                 }

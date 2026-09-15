@@ -127,7 +127,8 @@ public final class PetGlow {
 
     /** 只发给这只宠物的 owner 群（owner + caregivers）。 */
     public static void sendToOwnerGroup(final ServerLevel level, final Entity pet, final Packet<?> packet) {
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+        // 只遍历本维度的玩家：跨维度的玩家不可能追踪这只宠物，之前每次扫全服属于白跑
+        for (ServerPlayer player : level.players()) {
             if (pet instanceof TamableAnimal tamableAnimal && tamableAnimal.isOwnedBy(player)) {
                 player.connection.send(packet);
             }

@@ -1,6 +1,7 @@
 package com.github.lunaunde.communalpets.mixin.minecraft.word.entity.animal.feline;
 
 import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
+import com.github.lunaunde.communalpets.world.entity.ai.goal.FollowNearestPlayerGoal;
 import com.github.lunaunde.communalpets.world.entity.ai.goal.WaterAvoidingRetreatToInnerRangeGoal;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -35,6 +36,7 @@ public abstract class CatMixin extends TamableAnimal {
             )
     )
     private void onRegisterGoals(final CallbackInfo ci){
+        this.goalSelector.addGoal(6,new FollowNearestPlayerGoal(this,1.0));
         this.goalSelector.addGoal(6,new WaterAvoidingRetreatToInnerRangeGoal(this,1.0));
     }
 
@@ -42,6 +44,16 @@ public abstract class CatMixin extends TamableAnimal {
     private void capturePlayer(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
         this.lastInteractor = player;
         this.lastInteractorHand = hand;
+    }
+
+    /**
+     * 交互一结束就松手：这两个字段只是"本次 mobInteract 内部"的中转，
+     * 不清空的话宠物会一直强引用一个可能已下线 / 已卸载的 Player 实体。
+     */
+    @Inject(method = "mobInteract", at = @At("RETURN"))
+    private void clearInteractor(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
+        this.lastInteractor = null;
+        this.lastInteractorHand = null;
     }
     @Redirect(
             method = "mobInteract",

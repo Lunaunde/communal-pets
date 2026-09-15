@@ -1,0 +1,30 @@
+{
+  "communal-pets.behavior.follow_commander": "跟随发令人",
+  "communal-pets.behavior.follow_nearest": "跟随最近的照护者",
+  "communal-pets.behavior.wander": "游荡中",
+  "communal-pets.behavior.sit": "坐下",
+
+  "communal-pets.actionbar.behavior": "%s：%s",
+
+  "communal-pets.command.coordinates": "%s, %s, %s",
+
+  "communal-pets.command.error.not_pet": "目标必须是一只已驯服的宠物",
+  "communal-pets.command.error.not_allowed": "你没有权限管理这只宠物",
+  "communal-pets.command.error.is_owner": "他就是这只宠物的主人",
+  "communal-pets.command.error.already_caregiver": "他已经是这只宠物的照护者了",
+  "communal-pets.command.error.not_caregiver": "他不是这只宠物的照护者",
+  "communal-pets.command.error.unknown_behavior": "未知状态，只能是 follow_commander / follow_nearest / wander / sit",
+
+  "communal-pets.command.caregiver.added": "%s 已成为 %s 的照护者",
+  "communal-pets.command.caregiver.removed": "%s 已不再是 %s 的照护者",
+  "communal-pets.command.caregiver.list.header": "%s 的照护者：",
+  "communal-pets.command.caregiver.list.empty": " (没有)",
+  "communal-pets.command.caregiver.tag.owner": "[主人]",
+  "communal-pets.command.caregiver.tag.caregiver": "[照护者]",
+
+  "communal-pets.command.behavior.get": "%s 当前状态：%s",
+  "communal-pets.command.behavior.set": "已把 %s 的状态设为 %s",
+
+  "communal-pets.command.wander_center.get": "%s 的游荡中心：%s",
+  "communal-pets.command.wander_center.set": "已把 %s 的游荡中心设为 %s"
+}
