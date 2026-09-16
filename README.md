@@ -149,7 +149,7 @@ are mostly English speakers.
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.2 and put
    [Fabric API](https://modrinth.com/mod/fabric-api) in the server's `mods/` folder.
-2. Drop `communal-pets-1.0.0.jar` into the server's `mods/` folder.
+2. Drop `communal-pets-1.0.1.jar` into the server's `mods/` folder.
 3. Done — vanilla clients can connect and use everything.
 
 ### Build
@@ -297,7 +297,7 @@ CC0-1.0 — do whatever you want with it.
 
 1. 给 Minecraft 26.2 装好 [Fabric Loader](https://fabricmc.net/use/)，并把
    [Fabric API](https://modrinth.com/mod/fabric-api) 放进服务端的 `mods/`。
-2. 把 `communal-pets-1.0.0.jar` 放进服务端的 `mods/`。
+2. 把 `communal-pets-1.0.1.jar` 放进服务端的 `mods/`。
 3. 完成 —— 原版客户端可以直接连进来使用全部功能。
 
 ### 构建
