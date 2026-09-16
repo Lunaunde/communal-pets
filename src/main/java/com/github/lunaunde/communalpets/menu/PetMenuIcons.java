@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -41,7 +42,11 @@ import java.util.UUID;
  */
 final class PetMenuIcons {
 
-    private PetMenuIcons() {
+    /** 正在看这个界面的人：兜底文本按他客户端上报的语言生成（null = 服务端默认语言）。 */
+    private final @Nullable ServerPlayer player;
+
+    PetMenuIcons(@Nullable ServerPlayer player) {
+        this.player = player;
     }
 
     // ------------------------------------------------------------------
@@ -59,18 +64,18 @@ final class PetMenuIcons {
     }
 
     /** 物品名：指定颜色。 */
-    static MutableComponent label(String key, ChatFormatting color, Object... args) {
-        return Messages.tr(key, args).withStyle(color);
+    MutableComponent label(String key, ChatFormatting color, Object... args) {
+        return Messages.tr(this.player, key, args).withStyle(color);
     }
 
     /** 说明行（"怎么点"）：深灰，别抢主角。 */
-    static Component hint(String key, Object... args) {
-        return Messages.tr(key, args).withStyle(ChatFormatting.DARK_GRAY);
+    Component hint(String key, Object... args) {
+        return Messages.tr(this.player, key, args).withStyle(ChatFormatting.DARK_GRAY);
     }
 
     /** 强调行（有待处理的东西、已邀请等）：黄色。 */
-    static Component note(String key, Object... args) {
-        return Messages.tr(key, args).withStyle(ChatFormatting.YELLOW);
+    Component note(String key, Object... args) {
+        return Messages.tr(this.player, key, args).withStyle(ChatFormatting.YELLOW);
     }
 
     /**
@@ -79,7 +84,7 @@ final class PetMenuIcons {
      * <p>
      * 键和 {@code PetOwnerMenu} 的调用点共用同一批字面量 —— 想换颜色只改这里一处。
      */
-    static ChatFormatting headColor(@Nullable String nameKey) {
+    ChatFormatting headColor(@Nullable String nameKey) {
         if (nameKey == null) {
             return ChatFormatting.WHITE;
         }
@@ -96,11 +101,11 @@ final class PetMenuIcons {
      * 宠物图标下面那行「主人：X」：整行深灰，主人名单独金色
      * （{@code ownerName} 为 null 表示这只宠物没有主人）。
      */
-    static Component ownerLine(@Nullable Component ownerName) {
+    Component ownerLine(@Nullable Component ownerName) {
         Component name = ownerName == null
-                ? Messages.tr("communal-pets.menu.head.no_owner").withStyle(ChatFormatting.GRAY)
+                ? Messages.tr(this.player, "communal-pets.menu.head.no_owner").withStyle(ChatFormatting.GRAY)
                 : ownerName.copy().withStyle(ChatFormatting.GOLD);
-        return Messages.tr("communal-pets.menu.pet.lore.owner", name).withStyle(ChatFormatting.GRAY);
+        return Messages.tr(this.player, "communal-pets.menu.pet.lore.owner", name).withStyle(ChatFormatting.GRAY);
     }
 
     // ------------------------------------------------------------------
@@ -136,7 +141,7 @@ final class PetMenuIcons {
      * 宠物图标：优先用它自己的刷怪蛋（狼 / 猫 / 鹦鹉在 26.2 都有），拿不到就退化成玩家头颅。
      * 名称 = 宠物名，唯一一行 lore = 主人名（由调用方拼好，主人名是金色的）。
      */
-    static ItemStack petIcon(TamableAnimal pet, Component ownerLine) {
+    ItemStack petIcon(TamableAnimal pet, Component ownerLine) {
         ItemStack stack = SpawnEggItem.byId(pet.getType())
                 .map(holder -> new ItemStack(holder))
                 .orElseGet(() -> new ItemStack(Items.PLAYER_HEAD));
@@ -147,25 +152,25 @@ final class PetMenuIcons {
     // 表0 / 表0.1 / 表1 的按钮
     // ------------------------------------------------------------------
 
-    static ItemStack applyFeather() {
+    ItemStack applyFeather() {
         return of(Items.FEATHER,
                 label("communal-pets.menu.apply", ChatFormatting.GREEN),
                 List.of(hint("communal-pets.menu.apply.lore")));
     }
 
-    static ItemStack adminBlock() {
+    ItemStack adminBlock() {
         return of(Items.COMMAND_BLOCK,
                 label("communal-pets.menu.admin", ChatFormatting.AQUA),
                 List.of(hint("communal-pets.menu.admin.lore")));
     }
 
-    static ItemStack acceptPane() {
+    ItemStack acceptPane() {
         return of(Items.STAINED_GLASS_PANE.lime(),
                 label("communal-pets.menu.invite.accept", ChatFormatting.GREEN),
                 List.of(hint("communal-pets.menu.invite.accept.lore")));
     }
 
-    static ItemStack rejectPane() {
+    ItemStack rejectPane() {
         return of(Items.STAINED_GLASS_PANE.red(),
                 label("communal-pets.menu.invite.reject", ChatFormatting.RED),
                 List.of(hint("communal-pets.menu.invite.reject.lore")));
@@ -175,7 +180,7 @@ final class PetMenuIcons {
      * 行为状态按钮：当前状态 = 混凝土 + <b>加粗</b>，其它 = 玻璃块。
      * 文字颜色跟着发光色走（黄绿 / 浅蓝 / 橙 / 红），所以界面和宠物头顶的光是同一个语义。
      */
-    static ItemStack behaviorButton(boolean active, DyeColor color, Component name) {
+    ItemStack behaviorButton(boolean active, DyeColor color, Component name) {
         Item item = active ? Items.CONCRETE.pick(color) : Items.STAINED_GLASS.pick(color);
         MutableComponent text = name.copy().withStyle(textColorOf(color));
         if (active) {
@@ -200,7 +205,7 @@ final class PetMenuIcons {
      * 游荡范围命名牌：数量就是半径（界面里可调 1~99）。
      * 半径被指令设到 99 以上时数量只能显示 99（{@code ItemStack} 上限就是 99），真实值写进 lore。
      */
-    static ItemStack radiusNameTag(double radius) {
+    ItemStack radiusNameTag(double radius) {
         int shown = (int) Math.max(1, Math.min(99, Math.round(radius)));
         List<Component> lore = new ArrayList<>();
         lore.add(radius > 99
@@ -213,14 +218,14 @@ final class PetMenuIcons {
     }
 
     /** 半径步进粒：名称就是步长（黄），说明里写清左键加、右键减。 */
-    static ItemStack radiusNugget(Item item, int step) {
+    ItemStack radiusNugget(Item item, int step) {
         return of(item,
                 Component.literal("+" + step).withStyle(ChatFormatting.YELLOW),
                 List.of(hint("communal-pets.menu.radius.step", step, step)));
     }
 
     /** 页码命名牌：数量 = 当前页。 */
-    static ItemStack pageNameTag(int page, int pageCount, String titleKey) {
+    ItemStack pageNameTag(int page, int pageCount, String titleKey) {
         ItemStack stack = of(Items.NAME_TAG,
                 label(titleKey, ChatFormatting.WHITE, page, Math.max(1, pageCount)),
                 List.of(hint("communal-pets.menu.page.lore")));
@@ -229,7 +234,7 @@ final class PetMenuIcons {
     }
 
     /** 纸张：抚养者管理入口（名称金）；有未处理申请时加附魔纹理，并多一行黄色强调。 */
-    static ItemStack paper(boolean pending) {
+    ItemStack paper(boolean pending) {
         List<Component> lore = new ArrayList<>();
         lore.add(hint("communal-pets.menu.paper.lore.manage"));
         lore.add(hint("communal-pets.menu.paper.lore.requests"));
@@ -245,18 +250,18 @@ final class PetMenuIcons {
     }
 
     /** 表2 中间那列分界线。 */
-    static ItemStack divider() {
+    ItemStack divider() {
         return of(Items.STAINED_GLASS_PANE.gray(),
                 label("communal-pets.menu.divider", ChatFormatting.DARK_GRAY),
                 List.of(hint("communal-pets.menu.divider.lore")));
     }
 
-    static ItemStack confirmPane(Component text) {
+    ItemStack confirmPane(Component text) {
         return of(Items.STAINED_GLASS_PANE.lime(),
                 text.copy().withStyle(ChatFormatting.GREEN), List.of(hint("communal-pets.menu.confirm.lore")));
     }
 
-    static ItemStack cancelPane(Component text) {
+    ItemStack cancelPane(Component text) {
         return of(Items.STAINED_GLASS_PANE.red(),
                 text.copy().withStyle(ChatFormatting.RED), List.of(hint("communal-pets.menu.cancel.lore")));
     }
@@ -271,7 +276,7 @@ final class PetMenuIcons {
      * 在线玩家直接用服务端手上的 {@link GameProfile}（带皮肤属性）→ 客户端不用再联网解析；
      * 离线玩家只有 UUID，用 {@code createUnresolved} 交给客户端自己解析，解析不到就是默认皮肤。
      */
-    static ItemStack playerHead(UUID id, @Nullable GameProfile profile, Component name, List<Component> lore) {
+    ItemStack playerHead(UUID id, @Nullable GameProfile profile, Component name, List<Component> lore) {
         ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
         stack.set(DataComponents.PROFILE, profile != null
                 ? ResolvableProfile.createResolved(profile)
@@ -280,7 +285,7 @@ final class PetMenuIcons {
     }
 
     /** 没有内容时给一个"空"提示物，免得玩家以为界面坏了。 */
-    static ItemStack emptyHint(Component name) {
+    ItemStack emptyHint(Component name) {
         return of(Items.STAINED_GLASS_PANE.white(), name.copy().withStyle(ChatFormatting.GRAY));
     }
 

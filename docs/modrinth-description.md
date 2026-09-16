@@ -126,9 +126,10 @@ turning into a tug of war.
 
 ### Bilingual, including for vanilla clients
 
-English and 中文 are built in. Because vanilla clients have no language files for this mod, every
-text component is sent with a **fallback string** embedded — so a vanilla client reads real sentences
-instead of raw translation keys. A small config file picks which language that fallback uses.
+English and 中文 are built in, and the text **follows each player's own language** — including vanilla
+clients, which cannot translate anything themselves. Because those clients have no language files for
+this mod, every text component carries a **fallback string written in the reader's language**, so a
+vanilla client reads real sentences instead of raw translation keys and can switch language in-game.
 
 ## Commands
 
@@ -153,7 +154,8 @@ instead of raw translation keys. A small config file picks which language that f
 }
 ```
 
-Set `fallback_language` to `en_us` if your players are mostly English speakers.
+`fallback_language` is only a last resort (server console, command blocks, and client languages this mod
+has no file for). Set it to `en_us` if your players are mostly English speakers.
 
 ## Supported
 
@@ -182,8 +184,8 @@ For the curious, and for anyone worried about compatibility:
   an item.
 - The glow uses throwaway scoreboard teams: a fake team is created for the pet, and only the guardian
   group is told about it — vanilla clients then render the glow for those players only.
-- All text is a `translatable` component with the fallback string embedded, so vanilla clients can
-  read it.
+- All text is a `translatable` component whose fallback string is written in the reader's own language,
+  so vanilla clients read it — and an open menu is redrawn as soon as the player changes language.
 
 ## Known limitations
 

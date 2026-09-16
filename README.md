@@ -42,8 +42,8 @@ including the in-game menus.
   rejects. The owner can invite online players from the menu, or offline players by command.
 - **Ownership transfer** with confirmation screens: the new owner takes over, the old owner is demoted
   to caretaker.
-- **Bilingual messages** (`en_us` / `zh_cn`), with a *fallback* so that vanilla clients — which do not
-  have this mod's language files — still read real sentences instead of raw translation keys.
+- **Bilingual messages** (`en_us` / `zh_cn`) that follow each player's own language — including vanilla
+  clients, which cannot translate anything themselves, so the server sends the text in *their* language.
 
 ### Gestures
 
@@ -120,10 +120,11 @@ Details worth knowing:
 }
 ```
 
-`fallback_language` is the language used for clients that **do not have this mod** (or a matching
-resource pack): the server reads that file from its own resources and sends the text along with every
-component. Clients that do have the mod still use their own language. Set it to `en_us` if your players
-are mostly English speakers.
+`fallback_language` is the **last resort** language: text is generated for whoever is reading it, so a
+player gets the language their client reports (`zh_cn`, `en_us`, …) as long as this mod ships that
+language file. The fallback is used for the server console, command blocks, and any client language the
+mod has no language file for. Clients that *do* have the mod installed translate everything themselves
+and are unaffected. Set it to `en_us` if your players are mostly English speakers.
 
 ### How it works without a client mod
 
@@ -132,7 +133,8 @@ are mostly English speakers.
   and answered with a full-state resync, so the client's local prediction never moves anything.
 - **Glow** uses throwaway scoreboard teams: a fake team is created for the pet and only the owner group is
   told about it, so vanilla clients render the glow for those players only.
-- **Text** uses `translatable` components with a fallback string embedded, so vanilla clients can read it.
+- **Text** is a `translatable` component whose *fallback string* is the sentence in the reader's own
+  language, so vanilla clients read real text and still switch language in-game.
 - The one cosmetic thing that has to come back from the server is the hand swing of the menu gesture
   (one round trip); the menu is opened one tick later so that you still see your own swing.
 
@@ -273,15 +275,17 @@ CC0-1.0 — do whatever you want with it.
 }
 ```
 
-`fallback_language` 是**没装本模组**（也没有对应语言资源包）的客户端看到的语言：服务端从自己资源里
-读这个语言文件，把文本随组件一起发出去。装了模组的客户端仍然按自己的语言显示。
+`fallback_language` 是**兜底**语言：文本是按"看的人"生成的 —— 只要本模组带了这个语言文件，
+玩家就拿他客户端上报的语言（`zh_cn`、`en_us`……）。兜底只用在服务端控制台、命令方块，以及
+客户端语言我们没有语言文件的玩家身上。装了模组的客户端自己就能翻译，完全不受这个配置影响。
 
 ### 为什么不需要客户端模组
 
 - **界面**用的是原版 `GENERIC_9x3` / `GENERIC_9x6` 容器，里面塞的是原版物品；名称、Lore、数量、
   附魔光泽、玩家头颅皮肤都是普通的数据组件。点击由服务端接管并回发整屏同步，客户端的本地预测动不了东西。
 - **发光**用一次性的计分板队伍实现：只把宠物所在的假队伍发给抚养者，原版客户端就只对他们渲染发光。
-- **文本**用带兜底字符串的 `translatable` 组件，原版客户端也能读懂。
+- **文本**是 `translatable` 组件，而兜底字符串就是**读的人自己语言**的那句话，所以原版客户端既能
+  读到正常文本，也能跟着游戏内语言切换（界面上换语言后当 tick 就会重画）。
 - 唯一必须由服务端补的是开界面那一下的**挥手**（晚 1 个 RTT），并且界面会**延迟一 tick** 打开，
   让你自己的视角也能看到挥舞。
 

@@ -61,49 +61,19 @@ import java.util.function.Predicate;
  */
 public final class CommunalPetsCommand {
 
-    private static final SimpleCommandExceptionType ERROR_NOT_PET =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.not_pet"));
 
-    private static final SimpleCommandExceptionType ERROR_NOT_ALLOWED =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.not_allowed"));
-
-    private static final SimpleCommandExceptionType ERROR_IS_OWNER =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.is_owner"));
-
-    private static final SimpleCommandExceptionType ERROR_ALREADY_CARETAKER =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.already_caretaker"));
-
-    private static final SimpleCommandExceptionType ERROR_NOT_CARETAKER =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.not_caretaker"));
-
-    private static final SimpleCommandExceptionType ERROR_UNKNOWN_BEHAVIOR =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.unknown_behavior"));
-
-    /** 半径的合法范围是 (0, {@link CommunalPet#MAX_WANDER_RADIUS}]，上限写进消息里免得两处硬编码。 */
-    private static final SimpleCommandExceptionType ERROR_INVALID_RADIUS =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.invalid_radius",
-                    format(CommunalPet.MAX_WANDER_RADIUS)));
-
-    /** 邀请时所有目标都已经是照顾者 / 就是主人。 */
-    private static final SimpleCommandExceptionType ERROR_NOTHING_TO_INVITE =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.nothing_to_invite"));
-
-    /** accept / reject 时找不到发给自己的待处理请求。 */
-    private static final SimpleCommandExceptionType ERROR_NO_REQUEST =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.no_request"));
-
-    /** 找到的请求已经超过 15 分钟：指令这条路不再受理，得去界面里点。 */
-    private static final SimpleCommandExceptionType ERROR_REQUEST_EXPIRED =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.request_expired"));
-
-    /** accept / reject 没有"自己"这个概念，控制台用不了。 */
-    private static final SimpleCommandExceptionType ERROR_PLAYER_ONLY =
-            new SimpleCommandExceptionType(Messages.tr("communal-pets.command.error.player_only"));
 
     /**
      * 所有"写"操作的门槛：op（{@link Commands#LEVEL_GAMEMASTERS}，和原版 /gamemode、/summon 同级）。
      * 写在节点上而不是 handler 里，所以非 op 的客户端连这些子命令的补全都收不到。
      */
+    /**
+     * 指令报错文本：按"谁在执行"选语言 —— 玩家用他客户端的语言，控制台 / 命令方块用服务端默认语言。
+     * 所以异常类型必须每次现造（以前是在类初始化时就建好的，那样只有一种语言、切语言也不会变）。
+     */
+    private static SimpleCommandExceptionType error(CommandSourceStack source, String key, Object... args) {
+        return new SimpleCommandExceptionType(Messages.tr(source, key, args));
+    }
     private static final Predicate<CommandSourceStack> OPERATOR =
             Commands.hasPermission(Commands.LEVEL_GAMEMASTERS);
 
@@ -197,42 +167,42 @@ public final class CommunalPetsCommand {
 
     private static int addCaretaker(CommandSourceStack source, Entity target, ServerPlayer player)
             throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
 
         UUID ownerId = ownerIdOf(pet);
         if (ownerId != null && ownerId.equals(player.getUUID())) {
-            throw ERROR_IS_OWNER.create();
+            throw error(source, "communal-pets.command.error.is_owner").create();
         }
         if (CommunalPet.getCaretakerUUIDs(pet).contains(player.getUUID())) {
-            throw ERROR_ALREADY_CARETAKER.create();
+            throw error(source, "communal-pets.command.error.already_caretaker").create();
         }
 
         CommunalPet.addCaretaker(pet, player);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.caretaker.added",
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.caretaker.added",
                 player.getName(), pet.getName()), true);
         return 1;
     }
 
     private static int removeCaretaker(CommandSourceStack source, Entity target, ServerPlayer player)
             throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
 
         UUID ownerId = ownerIdOf(pet);
         if (ownerId != null && ownerId.equals(player.getUUID())) {
-            throw ERROR_IS_OWNER.create();
+            throw error(source, "communal-pets.command.error.is_owner").create();
         }
         if (!CommunalPet.getCaretakerUUIDs(pet).contains(player.getUUID())) {
-            throw ERROR_NOT_CARETAKER.create();
+            throw error(source, "communal-pets.command.error.not_caretaker").create();
         }
 
         CommunalPet.removeCaretaker(pet, player.getUUID());
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.caretaker.removed",
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.caretaker.removed",
                 player.getName(), pet.getName()), true);
         return 1;
     }
 
     private static int listCaretakers(CommandSourceStack source, Entity target) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
         checkCanView(source, pet);
 
         UUID ownerId = ownerIdOf(pet);
@@ -241,7 +211,7 @@ public final class CommunalPetsCommand {
 
         // 主人放第一行并标 [owner]，其余的标 [caretaker]
         MutableComponent message =
-                Messages.tr("communal-pets.command.caretaker.list.header", pet.getName());
+                Messages.tr(source, "communal-pets.command.caretaker.list.header", pet.getName());
         int listed = 0;
         if (ownerId != null) {
             message.append(entryLine(source, ownerId,
@@ -257,7 +227,7 @@ public final class CommunalPetsCommand {
             listed++;
         }
         if (listed == 0) {
-            message.append(Messages.tr("communal-pets.command.caretaker.list.empty"));
+            message.append(Messages.tr(source, "communal-pets.command.caretaker.list.empty"));
         }
 
         source.sendSuccess(() -> message, false);
@@ -276,7 +246,7 @@ public final class CommunalPetsCommand {
      */
     private static int inviteCaretakers(CommandSourceStack source, Entity target, Collection<NameAndId> players)
             throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
         checkCanManage(source, pet);
 
         UUID ownerId = ownerIdOf(pet);
@@ -294,10 +264,10 @@ public final class CommunalPetsCommand {
             invited++;
         }
         if (invited == 0) {
-            throw ERROR_NOTHING_TO_INVITE.create();
+            throw error(source, "communal-pets.command.error.nothing_to_invite").create();
         }
         int sent = invited;
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.caretaker.invite.sent",
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.caretaker.invite.sent",
                 sent, pet.getName()), true);
         return invited;
     }
@@ -317,7 +287,7 @@ public final class CommunalPetsCommand {
     private static int answerRequest(CommandSourceStack source, boolean accept) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayer();
         if (player == null) {
-            throw ERROR_PLAYER_ONLY.create();   // 控制台没有"发给自己的请求"
+            throw error(source, "communal-pets.command.error.player_only").create();   // 控制台没有"发给自己的请求"
         }
 
         MinecraftServer server = source.getServer();
@@ -355,11 +325,11 @@ public final class CommunalPetsCommand {
         }
 
         if (found == null || foundTarget == null) {
-            throw ERROR_NO_REQUEST.create();
+            throw error(source, "communal-pets.command.error.no_request").create();
         }
         if (!found.withinCommandWindow()) {
             // 时间窗之外的请求只能去界面里点（界面里的请求长期有效）
-            throw ERROR_REQUEST_EXPIRED.create();
+            throw error(source, "communal-pets.command.error.request_expired").create();
         }
 
         UUID ownerId = ownerIdOf(foundPet);
@@ -372,7 +342,7 @@ public final class CommunalPetsCommand {
         UUID target = foundTarget;
         TamableAnimal pet = foundPet;
         Component targetName = PetMenus.nameOf(server, target);
-        source.sendSuccess(() -> Messages.tr(accept
+        source.sendSuccess(() -> Messages.tr(source, accept
                         ? "communal-pets.command.answer.accepted"
                         : "communal-pets.command.answer.rejected",
                 targetName, pet.getName()), true);
@@ -394,14 +364,14 @@ public final class CommunalPetsCommand {
         if (player == null || CommunalPet.canManage(pet, player)) {
             return;   // 控制台 / 命令方块放行，和现有读写权限策略保持一致
         }
-        throw ERROR_NOT_ALLOWED.create();
+        throw error(source, "communal-pets.command.error.not_allowed").create();
     }
 
     private static Component entryLine(CommandSourceStack source, UUID id, String tagKey, ChatFormatting tagColor) {
         return Component.literal("\n - ")
                 .append(nameOf(source, id))
                 .append(Component.literal(" "))
-                .append(Messages.tr(tagKey).withStyle(tagColor));
+                .append(Messages.tr(source, tagKey).withStyle(tagColor));
     }
 
     // ------------------------------------------------------------------
@@ -409,52 +379,52 @@ public final class CommunalPetsCommand {
     // ------------------------------------------------------------------
 
     private static int getWanderCenter(CommandSourceStack source, Entity target) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
         checkCanView(source, pet);
 
         Vec3 center = CommunalPet.getWanderCenter(pet);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.wander_center.get",
-                pet.getName(), coordinates(center)), false);
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.wander_center.get",
+                pet.getName(), coordinates(source, center)), false);
         return 1;
     }
 
     private static int setWanderCenter(CommandSourceStack source, Entity target, Vec3 pos) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
 
         CommunalPet.setWanderCenter(pet, pos);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.wander_center.set",
-                pet.getName(), coordinates(pos)), true);
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.wander_center.set",
+                pet.getName(), coordinates(source, pos)), true);
         return 1;
     }
 
     private static int getWanderRadius(CommandSourceStack source, Entity target) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
         checkCanView(source, pet);
 
         double radius = CommunalPet.getWanderRadius(pet);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.wander_radius.get",
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.wander_radius.get",
                 pet.getName(), format(radius)), false);
         return 1;
     }
 
     private static int setWanderRadius(CommandSourceStack source, Entity target, double radius)
             throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
 
         // 上界由 MAX_WANDER_RADIUS 决定，指令层先报错（实体上的 setter 也会夹，但那只是兜底）
         if (!(radius > 0) || radius > CommunalPet.MAX_WANDER_RADIUS) {
-            throw ERROR_INVALID_RADIUS.create();
+            throw error(source, "communal-pets.command.error.invalid_radius", format(CommunalPet.MAX_WANDER_RADIUS)).create();
         }
 
         CommunalPet.setWanderRadius(pet, radius);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.wander_radius.set",
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.wander_radius.set",
                 pet.getName(), format(radius)), true);
         return 1;
     }
 
     /** 坐标三元组，%s 由 lang 里的键决定怎么排版（不依赖原版的 chat.coordinates）。 */
-    private static Component coordinates(Vec3 pos) {
-        return Messages.tr("communal-pets.command.coordinates",
+    private static Component coordinates(CommandSourceStack source, Vec3 pos) {
+        return Messages.tr(source, "communal-pets.command.coordinates",
                 format(pos.x), format(pos.y), format(pos.z));
     }
 
@@ -467,17 +437,17 @@ public final class CommunalPetsCommand {
     // ------------------------------------------------------------------
 
     private static int getBehavior(CommandSourceStack source, Entity target) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
         checkCanView(source, pet);
 
         int state = CommunalPet.getBehaviorState(pet);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.behavior.get",
-                pet.getName(), Messages.tr(CommunalPet.behaviorKeyOf(state))), false);
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.behavior.get",
+                pet.getName(), Messages.tr(source, CommunalPet.behaviorKeyOf(state))), false);
         return state;   // 返回值 = 状态序号，方便 /execute store result
     }
 
     private static int setBehavior(CommandSourceStack source, Entity target, String name) throws CommandSyntaxException {
-        TamableAnimal pet = petOf(target);
+        TamableAnimal pet = petOf(source, target);
 
         // 别名只是为了顺手（followcommander / follownearest / commander / nearest 都能敲）
         int state = switch (name) {
@@ -485,12 +455,12 @@ public final class CommunalPetsCommand {
             case "follow_nearest", "follownearest", "nearest" -> CommunalPet.BEHAVIOR_FOLLOW_NEAREST;
             case "wander" -> CommunalPet.BEHAVIOR_WANDER;
             case "sit" -> CommunalPet.BEHAVIOR_SIT;
-            default -> throw ERROR_UNKNOWN_BEHAVIOR.create();
+            default -> throw error(source, "communal-pets.command.error.unknown_behavior").create();
         };
 
         CommunalPet.setBehaviorState(pet, state);
-        source.sendSuccess(() -> Messages.tr("communal-pets.command.behavior.set",
-                pet.getName(), Messages.tr(CommunalPet.behaviorKeyOf(state))), true);
+        source.sendSuccess(() -> Messages.tr(source, "communal-pets.command.behavior.set",
+                pet.getName(), Messages.tr(source, CommunalPet.behaviorKeyOf(state))), true);
         return 1;
     }
 
@@ -499,9 +469,9 @@ public final class CommunalPetsCommand {
     // ------------------------------------------------------------------
 
     /** 目标必须是已驯服的 {@link TamableAnimal}（本模组在它身上混入了 {@link CommunalPet}）。 */
-    private static TamableAnimal petOf(Entity target) throws CommandSyntaxException {
+    private static TamableAnimal petOf(CommandSourceStack source, Entity target) throws CommandSyntaxException {
         if (!(target instanceof TamableAnimal pet) || !pet.isTame()) {
-            throw ERROR_NOT_PET.create();
+            throw error(source, "communal-pets.command.error.not_pet").create();
         }
         return pet;
     }
@@ -525,7 +495,7 @@ public final class CommunalPetsCommand {
         if (pet.isOwnedBy(player) || isGameMaster(source)) {
             return;
         }
-        throw ERROR_NOT_ALLOWED.create();
+        throw error(source, "communal-pets.command.error.not_allowed").create();
     }
 
     /**

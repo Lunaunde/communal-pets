@@ -63,7 +63,13 @@ public class PetOwnerMenu extends ChestMenu {
     private final Container board;
     private final Map<Integer, SlotAction> actions = new HashMap<>();
 
+    /** 所有控件都从这里出：它拿着 {@link #player}，兜底文本才会按<b>这个玩家</b>的语言生成。 */
+    private final PetMenuIcons icons;
+
     private PetMenuView view;
+
+    /** 面板当前是用哪种语言画的；玩家改语言后（客户端会上报新的 client information）用它对比。 */
+    private String language;
     private int memberPage;
     private int outsiderPage;
     private int applicationPage;
@@ -82,6 +88,8 @@ public class PetOwnerMenu extends ChestMenu {
                 syncId, inventory, new SimpleContainer(view.size()), view.rows());
         this.player = player;
         this.pet = pet;
+        this.icons = new PetMenuIcons(player);
+        this.language = Messages.languageOf(player);
         this.board = this.getContainer();
         this.view = this.sanitize(view);
         this.memberPage = Math.max(0, memberPage);
@@ -126,6 +134,23 @@ public class PetOwnerMenu extends ChestMenu {
         super.clicked(slotId, button, input, clicker);
     }
 
+    /**
+     * 服务端每 tick 都会走这里（{@code ServerPlayer#tick} → {@code AbstractContainerMenu#broadcastChanges}）。
+     * <p>
+     * 玩家在设置里换语言后，客户端会把新的 client information 发上来（关闭设置界面时），这里发现语言变了
+     * 就地把整块面板按新语言重画一遍 —— 不用关掉界面重开。这就是"语言切换对箱子页面无影响"的修复：
+     * 兜底文本是按<b>看的人</b>的语言生成的，光靠客户端切语言，服务端发的还是老语言。
+     */
+    @Override
+    public void broadcastChanges() {
+        String current = Messages.languageOf(this.player);
+        if (!current.equals(this.language)) {
+            this.language = current;
+            this.refresh();
+        }
+        super.broadcastChanges();
+    }
+
     // ------------------------------------------------------------------
     // 画界面
     // ------------------------------------------------------------------
@@ -153,25 +178,25 @@ public class PetOwnerMenu extends ChestMenu {
     }
 
     private void renderOutsider() {
-        this.put(4, PetMenuIcons.petIcon(this.pet, this.ownerLine()), null);
-        this.put(13, PetMenuIcons.applyFeather(), button -> this.applyAsCaretaker());
+        this.put(4, this.icons.petIcon(this.pet, this.ownerLine()), null);
+        this.put(13, this.icons.applyFeather(), button -> this.applyAsCaretaker());
         if (this.isGameMaster()) {
             // 设计文档：命令方块只对 op 显示，点它进表1（所以 op 蹲下右键先看到的是表0）
-            this.put(22, PetMenuIcons.adminBlock(), button -> this.switchView(PetMenuView.MEMBER));
+            this.put(22, this.icons.adminBlock(), button -> this.switchView(PetMenuView.MEMBER));
         }
     }
 
     private void renderInvited() {
-        this.put(4, PetMenuIcons.petIcon(this.pet, this.ownerLine()), null);
-        this.put(12, PetMenuIcons.acceptPane(), button -> this.answerInvitation(true));
-        this.put(14, PetMenuIcons.rejectPane(), button -> this.answerInvitation(false));
+        this.put(4, this.icons.petIcon(this.pet, this.ownerLine()), null);
+        this.put(12, this.icons.acceptPane(), button -> this.answerInvitation(true));
+        this.put(14, this.icons.rejectPane(), button -> this.answerInvitation(false));
         if (this.isGameMaster()) {
-            this.put(22, PetMenuIcons.adminBlock(), button -> this.switchView(PetMenuView.MEMBER));
+            this.put(22, this.icons.adminBlock(), button -> this.switchView(PetMenuView.MEMBER));
         }
     }
 
     private void renderMember() {
-        this.put(0, PetMenuIcons.petIcon(this.pet, this.ownerLine()), null);
+        this.put(0, this.icons.petIcon(this.pet, this.ownerLine()), null);
 
         int state = CommunalPet.getBehaviorState(this.pet);
         this.put(1, this.behaviorButton(state, CommunalPet.BEHAVIOR_FOLLOW_COMMANDER, DyeColor.LIME),
@@ -183,10 +208,10 @@ public class PetOwnerMenu extends ChestMenu {
         this.put(4, this.behaviorButton(state, CommunalPet.BEHAVIOR_SIT, DyeColor.RED),
                 button -> this.clickBehavior(CommunalPet.BEHAVIOR_SIT));
 
-        this.put(9, PetMenuIcons.radiusNameTag(CommunalPet.getWanderRadius(this.pet)), null);
-        this.put(10, PetMenuIcons.radiusNugget(Items.COPPER_NUGGET, 1), button -> this.adjustRadius(button, 1));
-        this.put(11, PetMenuIcons.radiusNugget(Items.IRON_NUGGET, 4), button -> this.adjustRadius(button, 4));
-        this.put(12, PetMenuIcons.radiusNugget(Items.GOLD_NUGGET, 16), button -> this.adjustRadius(button, 16));
+        this.put(9, this.icons.radiusNameTag(CommunalPet.getWanderRadius(this.pet)), null);
+        this.put(10, this.icons.radiusNugget(Items.COPPER_NUGGET, 1), button -> this.adjustRadius(button, 1));
+        this.put(11, this.icons.radiusNugget(Items.IRON_NUGGET, 4), button -> this.adjustRadius(button, 4));
+        this.put(12, this.icons.radiusNugget(Items.GOLD_NUGGET, 16), button -> this.adjustRadius(button, 16));
 
         this.put(18, this.ownerHead(), null);
         List<UUID> caretakers = CommunalPet.getCaretakerUUIDs(this.pet);
@@ -196,14 +221,14 @@ public class PetOwnerMenu extends ChestMenu {
 
         if (this.canManage()) {
             boolean pending = !CommunalPet.getApplications(this.pet).isEmpty();
-            this.put(26, PetMenuIcons.paper(pending), button -> this.switchView(
+            this.put(26, this.icons.paper(pending), button -> this.switchView(
                     button == 1 ? PetMenuView.APPLICATIONS : PetMenuView.MANAGE));
         }
     }
 
     private void renderManage() {
         for (int row = 0; row < 6; row++) {
-            this.put(row * 9 + 4, PetMenuIcons.divider(), null);
+            this.put(row * 9 + 4, this.icons.divider(), null);
         }
 
         // 左面板：主人永远在第一格，其余是照顾者
@@ -238,7 +263,7 @@ public class PetOwnerMenu extends ChestMenu {
                         });
             }
         }
-        this.put(45, PetMenuIcons.pageNameTag(this.memberPage + 1, leftPages, "communal-pets.menu.page.caretakers"),
+        this.put(45, this.icons.pageNameTag(this.memberPage + 1, leftPages, "communal-pets.menu.page.caretakers"),
                 button -> this.turnPage(button, true));
 
         // 右面板：当前不在抚养者里的在线玩家（设计文档：右侧只列在线玩家，离线走指令邀请）
@@ -257,11 +282,11 @@ public class PetOwnerMenu extends ChestMenu {
             int slot = (i / PANEL_COLUMNS) * 9 + 5 + (i % PANEL_COLUMNS);
             boolean invited = CommunalPet.hasInvitation(this.pet, id);
             List<Component> lore = List.of(invited
-                    ? PetMenuIcons.note("communal-pets.menu.head.invited.lore")
+                    ? this.icons.note("communal-pets.menu.head.invited.lore")
                     : hint("communal-pets.menu.head.invite.lore"));
             this.put(slot, this.head(id, "communal-pets.menu.head.invite", lore), button -> this.toggleInvite(id));
         }
-        this.put(53, PetMenuIcons.pageNameTag(this.outsiderPage + 1, rightPages, "communal-pets.menu.page.players"),
+        this.put(53, this.icons.pageNameTag(this.outsiderPage + 1, rightPages, "communal-pets.menu.page.players"),
                 button -> this.turnPage(button, false));
     }
 
@@ -272,7 +297,7 @@ public class PetOwnerMenu extends ChestMenu {
         }
         boolean kick = this.view == PetMenuView.CONFIRM_KICK;
         Component name = PetMenus.nameOf(this.server(), target);
-        this.put(11, PetMenuIcons.confirmPane(Messages.tr(kick
+        this.put(11, this.icons.confirmPane(Messages.tr(this.player, kick
                         ? "communal-pets.menu.confirm.kick" : "communal-pets.menu.confirm.transfer", name)),
                 button -> {
                     if (kick) {
@@ -282,7 +307,7 @@ public class PetOwnerMenu extends ChestMenu {
                     }
                 });
         this.put(13, this.head(target, null, List.of()), null);
-        this.put(15, PetMenuIcons.cancelPane(Messages.tr(kick
+        this.put(15, this.icons.cancelPane(Messages.tr(this.player, kick
                         ? "communal-pets.menu.cancel.kick" : "communal-pets.menu.cancel.transfer", name)),
                 button -> this.switchView(PetMenuView.MANAGE));
     }
@@ -305,9 +330,9 @@ public class PetOwnerMenu extends ChestMenu {
                     });
         }
         if (applications.isEmpty()) {
-            this.put(13, PetMenuIcons.emptyHint(Messages.tr("communal-pets.menu.applications.empty")), null);
+            this.put(13, this.icons.emptyHint(Messages.tr(this.player, "communal-pets.menu.applications.empty")), null);
         }
-        this.put(26, PetMenuIcons.pageNameTag(this.applicationPage + 1, pages,
+        this.put(26, this.icons.pageNameTag(this.applicationPage + 1, pages,
                         "communal-pets.menu.page.applications"),
                 button -> {
                     this.applicationPage = this.turnedPage(this.applicationPage, button, pages);
@@ -335,7 +360,7 @@ public class PetOwnerMenu extends ChestMenu {
 
     private void applyAsCaretaker() {
         CommunalPet.addApplication(this.pet, this.player.getUUID());
-        this.player.sendSystemMessage(Messages.tr("communal-pets.menu.msg.applied", this.pet.getName()));
+        this.player.sendSystemMessage(Messages.tr(this.player, "communal-pets.menu.msg.applied", this.pet.getName()));
         PetMenus.notifyOwner(this.pet, "communal-pets.menu.msg.new_application", this.player.getName());
         this.player.closeContainer();   // LRO
     }
@@ -445,15 +470,15 @@ public class PetOwnerMenu extends ChestMenu {
     }
 
     private ItemStack behaviorButton(int currentState, int buttonState, DyeColor color) {
-        return PetMenuIcons.behaviorButton(currentState == buttonState, color,
-                Messages.tr(CommunalPet.behaviorKeyOf(buttonState)));
+        return this.icons.behaviorButton(currentState == buttonState, color,
+                Messages.tr(this.player, CommunalPet.behaviorKeyOf(buttonState)));
     }
 
     /** 主人头颅；没有主人（理论上不会发生）就给个空提示。 */
     private ItemStack ownerHead() {
         UUID ownerId = CommunalPet.ownerIdOf(this.pet);
         if (ownerId == null) {
-            return PetMenuIcons.emptyHint(Messages.tr("communal-pets.menu.head.no_owner"));
+            return this.icons.emptyHint(Messages.tr(this.player, "communal-pets.menu.head.no_owner"));
         }
         return this.head(ownerId, "communal-pets.menu.head.owner", List.of());
     }
@@ -468,20 +493,20 @@ public class PetOwnerMenu extends ChestMenu {
     private ItemStack head(UUID id, @Nullable String nameKey, List<Component> lore) {
         Component name = PetMenus.nameOf(this.server(), id);
         if (nameKey != null) {
-            name = Messages.tr(nameKey, name);
+            name = Messages.tr(this.player, nameKey, name);
         }
-        return PetMenuIcons.playerHead(id, PetMenus.profileOf(this.server(), id),
-                name.copy().withStyle(PetMenuIcons.headColor(nameKey)), lore);
+        return this.icons.playerHead(id, PetMenus.profileOf(this.server(), id),
+                name.copy().withStyle(this.icons.headColor(nameKey)), lore);
     }
 
     private Component ownerLine() {
         UUID ownerId = CommunalPet.ownerIdOf(this.pet);
-        return PetMenuIcons.ownerLine(ownerId == null ? null : PetMenus.nameOf(this.server(), ownerId));
+        return this.icons.ownerLine(ownerId == null ? null : PetMenus.nameOf(this.server(), ownerId));
     }
 
     /** 说明行走 {@link PetMenuIcons#hint}（深灰），保证整块界面的配色只有一个来源。 */
-    private static Component hint(String key, Object... args) {
-        return PetMenuIcons.hint(key, args);
+    private Component hint(String key, Object... args) {
+        return this.icons.hint(key, args);
     }
 
     private MinecraftServer server() {
@@ -500,12 +525,12 @@ public class PetOwnerMenu extends ChestMenu {
         return CommunalPet.canManage(this.pet, this.player);
     }
 
-    /** 给动作里发消息用的、带可点击应答按钮的提示（设计文档 STEP3）。 */
-    static MutableComponent answerButtons() {
-        return PetMenus.clickable("communal-pets.menu.msg.accept_button",
+    /** 给动作里发消息用的、带可点击应答按钮的提示（设计文档 STEP3）。按钮也要按看的人的语言走。 */
+    static MutableComponent answerButtons(ServerPlayer player) {
+        return PetMenus.clickable(player, "communal-pets.menu.msg.accept_button",
                 "/communalpets accept", net.minecraft.ChatFormatting.GREEN)
                 .append(Component.literal(" "))
-                .append(PetMenus.clickable("communal-pets.menu.msg.reject_button",
+                .append(PetMenus.clickable(player, "communal-pets.menu.msg.reject_button",
                         "/communalpets reject", net.minecraft.ChatFormatting.RED));
     }
 }

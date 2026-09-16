@@ -188,9 +188,10 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
         if (player instanceof ServerPlayer serverPlayer) {
             // 动作栏：宠物名 + 刚切换到的状态；状态词用和发光一样的颜色标出来
             serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(Messages.tr(
+                    serverPlayer,
                     "communal-pets.actionbar.behavior",
                     this.getName(),
-                    Messages.tr(CommunalPet.behaviorKeyOf(this.behaviorState))
+                    Messages.tr(serverPlayer, CommunalPet.behaviorKeyOf(this.behaviorState))
                             .withColor(CommunalPet.glowTextColorOf(this.behaviorState)))));
         }
         this.communalPets$startGlow(this.behaviorState);
@@ -367,9 +368,10 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
     @Unique
     public void communalPets$showBehaviorFeedback(ServerPlayer player) {
         player.connection.send(new ClientboundSetActionBarTextPacket(Messages.tr(
+                player,
                 "communal-pets.actionbar.behavior",
                 this.getName(),
-                Messages.tr(CommunalPet.behaviorKeyOf(this.behaviorState))
+                Messages.tr(player, CommunalPet.behaviorKeyOf(this.behaviorState))
                         .withColor(CommunalPet.glowTextColorOf(this.behaviorState)))));
         this.communalPets$startGlow(this.behaviorState);
     }

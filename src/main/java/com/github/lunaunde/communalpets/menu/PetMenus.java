@@ -90,7 +90,7 @@ public final class PetMenus {
         MenuProvider provider = new SimpleMenuProvider(
                 (syncId, inventory, opener) -> new PetOwnerMenu(syncId, inventory, player, pet, view,
                         memberPage, outsiderPage, applicationPage, confirmTarget),
-                Messages.tr(titleKey(view), pet.getName()));
+                Messages.tr(player, titleKey(view), pet.getName()));
         player.openMenu(provider);
     }
 
@@ -143,7 +143,7 @@ public final class PetMenus {
     public static void notifyPlayer(MinecraftServer server, UUID id, String key, Object... args) {
         ServerPlayer target = server.getPlayerList().getPlayer(id);
         if (target != null) {
-            target.sendSystemMessage(Messages.tr(key, args));
+            target.sendSystemMessage(Messages.tr(target, key, args));
         }
     }
 
@@ -156,8 +156,8 @@ public final class PetMenus {
     public static void notifyPending(MinecraftServer server, UUID id, String key, Object... args) {
         ServerPlayer target = server.getPlayerList().getPlayer(id);
         if (target != null) {
-            target.sendSystemMessage(Messages.tr(key, args));
-            target.sendSystemMessage(PetOwnerMenu.answerButtons());
+            target.sendSystemMessage(Messages.tr(target, key, args));
+            target.sendSystemMessage(PetOwnerMenu.answerButtons(target));
         }
     }
 
@@ -166,14 +166,14 @@ public final class PetMenus {
         MinecraftServer server = pet.level().getServer();
         LivingEntity owner = pet.getOwner();
         if (server != null && owner instanceof ServerPlayer ownerPlayer) {
-            ownerPlayer.sendSystemMessage(Messages.tr(key, args));
-            ownerPlayer.sendSystemMessage(PetOwnerMenu.answerButtons());
+            ownerPlayer.sendSystemMessage(Messages.tr(ownerPlayer, key, args));
+            ownerPlayer.sendSystemMessage(PetOwnerMenu.answerButtons(ownerPlayer));
         }
     }
 
     /** 可点击文本（原版客户端也认这个，因为是原版聊天组件）。 */
-    public static MutableComponent clickable(String key, String command, ChatFormatting color) {
-        return Messages.tr(key).withStyle(style -> style
+    public static MutableComponent clickable(ServerPlayer player, String key, String command, ChatFormatting color) {
+        return Messages.tr(player, key).withStyle(style -> style
                 .withClickEvent(new ClickEvent.RunCommand(command))
                 .withColor(color));
     }
