@@ -33,7 +33,7 @@ public abstract class LandOnOwnerShoulderGoalMixin extends Goal {
     /**
      * 原版这个 goal 只会落到"原版主人"肩上（{@code getOwner()} 在 {@code canUse} / {@code tick} 里
      * 各一处，反汇编核过）。这里把这两处换成"当前跟随对象"，于是 FOLLOW_NEAREST 时
-     * 它会落到正在跟随的那位照护者肩上，而不是永远飞向原版主人。
+     * 它会落到正在跟随的那位照顾者肩上，而不是永远飞向原版主人。
      * <p>
      * 解析不出来时（例如 32 格内没有 owner 群玩家）退回原版主人 —— 保持"至少还能落到主人肩上"，
      * 也保证 {@code tick} 不会吃到 null。

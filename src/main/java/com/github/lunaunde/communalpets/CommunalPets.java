@@ -1,6 +1,7 @@
 package com.github.lunaunde.communalpets;
 
 import com.github.lunaunde.communalpets.command.CommunalPetsCommand;
+import com.github.lunaunde.communalpets.menu.PetMenus;
 import com.github.lunaunde.communalpets.world.entity.animal.PetGlow;
 
 import net.fabricmc.api.ModInitializer;
@@ -27,6 +28,8 @@ public class CommunalPets implements ModInitializer {
 
 		CommunalPetsConfig.load();
 		CommunalPetsCommand.register();
+		// 假箱子界面延迟一 tick 打开（把挥手让回玩家自己的视角），需要一个 tick 钩子来兑现
+		PetMenus.registerTickHandler();
 
 		// "只有 owner 群看得见发光" 的纯服务端实现：
 		// END_LEVEL_TICK 注入在 ServerLevel.tick() 的 TAIL 上（entityManagement 之后），

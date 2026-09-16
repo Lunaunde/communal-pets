@@ -3,7 +3,7 @@
   "id": "communal-pets",
   "version": "${version}",
   "name": "Communal Pets",
-  "description": "Share your tamed pets: extra caregivers, behavior modes (follow commander / nearest caregiver / wander / sit), and owner-only glow feedback. Pure server-side - clients without this mod can join.",
+  "description": "Share your tamed pets: extra caretakers, behavior modes (follow commander / nearest guardian / wander / sit), and owner-group glow feedback. Pure server-side - clients without this mod can join.",
   "authors": [
     "Lunaunde"
   ],

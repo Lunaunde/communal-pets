@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 让宠物"接过战果"扩展到整个 owner 群：<b>主人或任一照护者打了谁，宠物就去打谁</b>。
+ * 让宠物"接过战果"扩展到整个 owner 群：<b>主人或任一照顾者打了谁，宠物就去打谁</b>。
  * <p>
  * vanilla 的 {@code canUse}（26.2，反汇编核过）只对"主人"这一位做判定：
  * <pre>

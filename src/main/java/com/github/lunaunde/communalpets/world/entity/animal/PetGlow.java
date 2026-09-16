@@ -24,7 +24,7 @@ import java.util.UUID;
  * 颜色用原版的 {@link ClientboundSetPlayerTeamPacket} 表达；"亮不亮"则不走
  * {@code setGlowingTag}（那个会把发光位广播给所有追踪者），而是由 {@link #pushGlowFlags}
  * 挂在 {@code ServerTickEvents.END_LEVEL_TICK} 上，每 tick 只给 owner 群伪发一次共享 flag 字节。
- * 两者都只发给这只宠物的 owner 群（{@code isOwnedBy} 已被本模组覆写成 owner + caregivers），
+ * 两者都只发给这只宠物的 owner 群（{@code isOwnedBy} 已被本模组覆写成 owner + caretakers），
  * 所以非 owner 群既收不到颜色、也收不到发光位 —— 完全看不到。
  * <p>
  * <b>队伍名带宠物 UUID，一只宠物一支队。</b>这样 ADD 包里的"全量成员列表"永远只有这一只宠物，
@@ -125,7 +125,7 @@ public final class PetGlow {
         }
     }
 
-    /** 只发给这只宠物的 owner 群（owner + caregivers）。 */
+    /** 只发给这只宠物的 owner 群（owner + caretakers）。 */
     public static void sendToOwnerGroup(final ServerLevel level, final Entity pet, final Packet<?> packet) {
         // 只遍历本维度的玩家：跨维度的玩家不可能追踪这只宠物，之前每次扫全服属于白跑
         for (ServerPlayer player : level.players()) {

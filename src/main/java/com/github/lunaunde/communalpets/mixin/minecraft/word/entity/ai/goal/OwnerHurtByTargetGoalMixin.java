@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 让宠物"护主"扩展到整个 owner 群：<b>谁打了主人或任一照护者，宠物就去打谁</b>。
+ * 让宠物"护主"扩展到整个 owner 群：<b>谁打了主人或任一照顾者，宠物就去打谁</b>。
  * <p>
  * 和 {@link OwnerHurtTargetGoalMixin} 同一套做法，只是数据源换成
  * {@code getLastHurtByMob()} / {@code getLastHurtByMobTimestamp()}（谁打了它），

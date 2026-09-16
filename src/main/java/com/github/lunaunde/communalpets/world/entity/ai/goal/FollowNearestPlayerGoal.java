@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.EnumSet;
 
 /**
- * {@link CommunalPet#BEHAVIOR_FOLLOW_NEAREST}：跟随"owner 群（主人 + 照护者）里离我最近的那个人"。
+ * {@link CommunalPet#BEHAVIOR_FOLLOW_NEAREST}：跟随"owner 群（主人 + 照顾者）里离我最近的那个人"。
  * <p>
  * 结构和原版 {@code FollowOwnerGoal} 基本一致，区别只有两点：
  * <ol>
@@ -82,7 +82,7 @@ public class FollowNearestPlayerGoal extends Goal {
             return false;
         }
         if (!this.pet.isOwnedBy(this.target)) {
-            return false;   // 目标被移出照护者名单，或者已经不是主人了
+            return false;   // 目标被移出照顾者名单，或者已经不是主人了
         }
         return !this.navigation.isDone()
                 && this.pet.distanceToSqr(this.target) > STOP_DISTANCE * STOP_DISTANCE;

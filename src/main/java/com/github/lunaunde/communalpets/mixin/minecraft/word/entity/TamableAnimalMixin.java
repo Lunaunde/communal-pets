@@ -2,6 +2,7 @@ package com.github.lunaunde.communalpets.mixin.minecraft.word.entity;
 
 import com.github.lunaunde.communalpets.Messages;
 import com.github.lunaunde.communalpets.world.entity.animal.CommunalPet;
+import com.github.lunaunde.communalpets.world.entity.animal.PendingRequest;
 import com.github.lunaunde.communalpets.world.entity.animal.PetGlow;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
@@ -56,7 +57,15 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
     private double wanderInnerRange = 0.8;
 
     @Unique
-    private final List<UUID> caregiverUUIDs = new ArrayList<>();
+    private final List<UUID> caretakerUUIDs = new ArrayList<>();
+
+    /** 申请成为照顾者的玩家（玩家 → 主人，等主人在表4 里批）。 */
+    @Unique
+    private final List<PendingRequest> applications = new ArrayList<>();
+
+    /** 已被邀请成为照顾者的玩家（主人 → 玩家，等对方在表0.1 里答）。 */
+    @Unique
+    private final List<PendingRequest> invitations = new ArrayList<>();
 
     /**
      * "指挥者"：最后一次右键指挥这只宠物的玩家（{@code follow_commander} 跟随的目标）。
@@ -96,6 +105,22 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
     @Unique
     public double communalPets$getWanderRadius() {
         return wanderRadius;
+    }
+
+    /**
+     * 夹到 {@code (0, MAX_WANDER_RADIUS]}：指令层已经报过错，这里保证任何调用方
+     * （含读档）都写不进越界值 —— {@code RandomStrollGoal} 拿到负半径会直接乱走。
+     * <p>
+     * 用 {@code !(radius > 0)} 而不是 {@code radius <= 0}：NaN 与任何数比较都是 false，
+     * 这样 NaN 也会被一起挡掉（{@code Math.max/min} 遇到 NaN 会原样传出去）。
+     */
+    @Override
+    @Unique
+    public void communalPets$setWanderRadius(double radius) {
+        if (!(radius > 0)) {
+            radius = Double.MIN_VALUE;
+        }
+        this.wanderRadius = Math.min(radius, MAX_WANDER_RADIUS);
     }
 
     @Override
@@ -242,49 +267,111 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
      * {@code stream().map(...).toList()} 会把 null 塞进列表（{@code Stream#toList} 允许 null），
      * 之后任何 {@code .map(LivingEntity::getUUID)} 之类的调用都会 NPE。
      * <p>
-     * 每次调用新建，返回不可变列表：要增删照护者请走
-     * {@code communalPets$getCaregiverUUIDs()} / {@link CommunalPet#addCaregiver} /
-     * {@link CommunalPet#removeCaregiver}。
+     * 每次调用新建，返回不可变列表：要增删照顾者请走
+     * {@code communalPets$getCaretakerUUIDs()} / {@link CommunalPet#addCaretaker} /
+     * {@link CommunalPet#removeCaretaker}。
      */
     @Override
     @Unique
-    public List<LivingEntity> communalPets$getCaregivers() {
-        if (this.caregiverUUIDs.isEmpty()) {
+    public List<LivingEntity> communalPets$getCaretakers() {
+        if (this.caretakerUUIDs.isEmpty()) {
             return List.of();
         }
-        List<LivingEntity> caregivers = new ArrayList<>(this.caregiverUUIDs.size());
-        for (UUID id : this.caregiverUUIDs) {
+        List<LivingEntity> caretakers = new ArrayList<>(this.caretakerUUIDs.size());
+        for (UUID id : this.caretakerUUIDs) {
             Player player = this.level().getPlayerInAnyDimension(id);
             if (player != null) {
-                caregivers.add(player);
+                caretakers.add(player);
             }
         }
-        return List.copyOf(caregivers);
+        return List.copyOf(caretakers);
     }
 
     /**
      * 存储本体的<b>只读快照</b>：调用方拿到的永远是一份副本，不会顺手把内部列表改掉。
-     * 写入口只有 {@link #communalPets$addCaregiver} / {@link #communalPets$removeCaregiver}；
+     * 写入口只有 {@link #communalPets$addCaretaker} / {@link #communalPets$removeCaretaker}；
      * 落档（{@code addAdditionalSaveData}）和读档仍然直接用私有字段，不受影响。
      */
     @Override
     @Unique
-    public List<UUID> communalPets$getCaregiverUUIDs() {
-        return List.copyOf(caregiverUUIDs);
+    public List<UUID> communalPets$getCaretakerUUIDs() {
+        return List.copyOf(caretakerUUIDs);
     }
 
     @Override
     @Unique
-    public void communalPets$addCaregiver(UUID id) {
-        if (!caregiverUUIDs.contains(id)) {
-            caregiverUUIDs.add(id);
+    public void communalPets$addCaretaker(UUID id) {
+        if (!caretakerUUIDs.contains(id)) {
+            caretakerUUIDs.add(id);
         }
     }
 
     @Override
     @Unique
-    public boolean communalPets$removeCaregiver(UUID id) {
-        return caregiverUUIDs.remove(id);
+    public boolean communalPets$removeCaretaker(UUID id) {
+        return caretakerUUIDs.remove(id);
+    }
+
+    // ------------------------------------------------------------------
+    // 申请 / 邀请
+    // ------------------------------------------------------------------
+
+    @Override
+    @Unique
+    public List<PendingRequest> communalPets$getApplications() {
+        return List.copyOf(applications);
+    }
+
+    @Override
+    @Unique
+    public List<PendingRequest> communalPets$getInvitations() {
+        return List.copyOf(invitations);
+    }
+
+    @Override
+    @Unique
+    public void communalPets$addApplication(UUID player) {
+        communalPets$putPending(this.applications, player);
+    }
+
+    @Override
+    @Unique
+    public boolean communalPets$removeApplication(UUID player) {
+        return this.applications.removeIf(request -> request.player().equals(player));
+    }
+
+    @Override
+    @Unique
+    public void communalPets$addInvitation(UUID player) {
+        communalPets$putPending(this.invitations, player);
+    }
+
+    @Override
+    @Unique
+    public boolean communalPets$removeInvitation(UUID player) {
+        return this.invitations.removeIf(request -> request.player().equals(player));
+    }
+
+    /** 同一玩家重复申请 / 被重复邀请时刷新时间戳，而不是堆两条。 */
+    @Unique
+    private static void communalPets$putPending(final List<PendingRequest> list, final UUID player) {
+        list.removeIf(request -> request.player().equals(player));
+        list.add(PendingRequest.now(player));
+    }
+
+    /**
+     * 动作栏状态提示 + owner 群发光反馈。界面里点行为按钮时用；
+     * 右键循环那条路径（{@code communalPets$cycleBehavior}）自己会做同一件事。
+     */
+    @Override
+    @Unique
+    public void communalPets$showBehaviorFeedback(ServerPlayer player) {
+        player.connection.send(new ClientboundSetActionBarTextPacket(Messages.tr(
+                "communal-pets.actionbar.behavior",
+                this.getName(),
+                Messages.tr(CommunalPet.behaviorKeyOf(this.behaviorState))
+                        .withColor(CommunalPet.glowTextColorOf(this.behaviorState)))));
+        this.communalPets$startGlow(this.behaviorState);
     }
 
     @Override
@@ -316,7 +403,9 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
             output.putDouble("wander_inner_range", wanderInnerRange);
 
 
-            output.store("caregivers", UUIDUtil.CODEC.listOf(), caregiverUUIDs);
+            output.store("caretakers", UUIDUtil.CODEC.listOf(), caretakerUUIDs);
+            output.store("applications", PendingRequest.LIST_CODEC, applications);
+            output.store("invitations", PendingRequest.LIST_CODEC, invitations);
             EntityReference.store(this.commander, output, "commander");
         }
     }
@@ -333,11 +422,16 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
             });
             Optional<Vec3> wanderCenter = input.read("wander_center", Vec3.CODEC);
             this.wanderCenter = wanderCenter.orElse(this.position());
-            this.wanderRadius = input.getDoubleOr("wander_radius", 32);
+            // 走 setter：手改过存档的越界半径也会被夹回范围内
+            this.communalPets$setWanderRadius(input.getDoubleOr("wander_radius", 32));
             this.wanderInnerRange = input.getDoubleOr("wander_inner_range", 0.8);
 
-            this.caregiverUUIDs.clear();
-            input.read("caregivers", UUIDUtil.CODEC.listOf()).ifPresent(caregiverUUIDs::addAll);
+            this.caretakerUUIDs.clear();
+            input.read("caretakers", UUIDUtil.CODEC.listOf()).ifPresent(caretakerUUIDs::addAll);
+            this.applications.clear();
+            input.read("applications", PendingRequest.LIST_CODEC).ifPresent(applications::addAll);
+            this.invitations.clear();
+            input.read("invitations", PendingRequest.LIST_CODEC).ifPresent(invitations::addAll);
             this.commander = EntityReference.<LivingEntity>read(input, "commander");
 
         }
@@ -372,7 +466,7 @@ public abstract class TamableAnimalMixin extends Animal implements CommunalPet, 
 
     @Inject(method = "isOwnedBy", at = @At("HEAD"), cancellable = true)
     private void onIsOwnedBy(LivingEntity entity, CallbackInfoReturnable<Boolean> cir) {
-        if (caregiverUUIDs.contains(entity.getUUID())) {
+        if (caretakerUUIDs.contains(entity.getUUID())) {
             cir.setReturnValue(true);
         }
     }
