@@ -165,7 +165,28 @@ Requires JDK 25.
 
 ### License
 
-CC0-1.0 — do whatever you want with it.
+GPL-3.0-or-later — free software: use it, change it, ship it; but if you
+distribute a modified version, it must stay free software, source included.
+
+Copyright (C) 2026 Lunaunde
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
+
+Full text: [LICENSE](LICENSE).
+
+Releases up to and including 1.0.1 went out under CC0-1.0. That grant cannot be
+revoked for copies already obtained, so those copies stay CC0 — the change
+applies from the next release onward.
 
 ---
 
@@ -315,4 +336,18 @@ CC0-1.0 — do whatever you want with it.
 
 ### 许可
 
-CC0-1.0，随便用。
+GPL-3.0-or-later —— 自由软件：随便用、随便改、随便发；但分发**修改版**时必须同样自由，
+源码要一起给出去。
+
+Copyright (C) 2026 Lunaunde
+
+本程序是自由软件：你可以按自由软件基金会发布的 GNU 通用公共许可证的条款重新发布和/或修改它，
+可以是第 3 版，也可以是（按你的选择）任何更新的版本。
+
+本程序的分发是希望它有用，但不提供任何担保，连适销性或特定用途适用性的默示担保也没有。
+详见 GNU 通用公共许可证。
+
+许可证全文见 [LICENSE](LICENSE)。
+
+1.0.1 及更早的版本是以 CC0-1.0 发布的：那份授权对已经拿到的副本不可撤回，它们仍然适用 CC0；
+从下一个版本开始改为 GPL-3.0-or-later。

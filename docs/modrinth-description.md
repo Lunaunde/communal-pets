@@ -198,7 +198,8 @@ For the curious, and for anyone worried about compatibility:
 
 ## License
 
-CC0-1.0 — do whatever you want with it. Source is on
+GPL-3.0-or-later — free software: use it, change it, ship it; but a modified
+version you distribute has to stay free software, source included. Source is on
 [GitHub](https://github.com/Lunaunde/communal-pets).
 
 <!--
